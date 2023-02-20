@@ -133,14 +133,8 @@ def auswerte(dicke, NummerMessung, Kommentar):
     ##Amplituden
 
     messungDet1 = (np.array(messung2) - np.array(messung1)) #Detektor 1, transparenter Filter, background
-    #messungDet2 = np.array(messung3) + np.array(messung4) #Detektor 2, grauer Filter
     messungDet2 = (np.array(messung4) - np.array(messung3))
-    #messungDet2_test = np.array(messung3)
-    #messungDet2_test_ges= (np.array(messung4) - np.array(messung3))
-
-    #messungDet1 = messung1 + messung3  # Detektor 1, transparenter Filter, background
-    #messungDet2 = messung3 + messung4  # Detektor 2, grauer Filter
-
+    
     #Amplitude Detektor 1
 
     amplitudeDet1=(1/samples)* np.abs(np.fft.fft(messungDet1)) #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
