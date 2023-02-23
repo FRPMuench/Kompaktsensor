@@ -1,8 +1,9 @@
-def auswerte(dicke, NummerMessung, Kommentar):
+def auswerte(dicke, NummerMessung, Kommentar, file_name):
     import serial
     import time
     import numpy as np
     import matplotlib.pyplot as plt
+    import pandas as pd
 
 
     ser = serial.Serial('COM3', 9600, timeout=0.1)#, timeout=0.01)#None)#0.01)
@@ -13,7 +14,7 @@ def auswerte(dicke, NummerMessung, Kommentar):
 
 
     ##Einstellungen
-    acquisitiontime = 0.4 #.5 # seconds
+    acquisitiontime =2 #.5 # seconds
     messung1 = [] #Detektor 1, Messung1 Transparent
     messung2 = [] #Detektor 1, Messung2,Transparent
     messung3 = [] #Detektor 2, Messung 1, Filter
@@ -27,9 +28,9 @@ def auswerte(dicke, NummerMessung, Kommentar):
         plt.grid(True)  # Turn the grid on
         plt.ylabel('Spannung in Volt')  # Set ylabels
         plt.xlabel('Zeit in Sekunden')  # Set ylabels
-        #plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
-        #plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
-        plt.plot(ticker, (np.array(messung4)-np.array(messung3)))
+        plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
+        plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
+        #plt.plot(ticker, (np.array(messung4)-np.array(messung3)))
         #plt.plot(ticker, (np.array(messung2) - np.array(messung1)))
         plt.plot(ticker, messung3, 'red', label='Detektor2, Messung1')  # plot messung2
         plt.plot(ticker, messung4, 'purple', label='Detektor2, Messung2')  # plot messung2
@@ -158,12 +159,13 @@ def auswerte(dicke, NummerMessung, Kommentar):
     print(f'Maxvalue Detektor1 = {maxvalueDet1}')
     print(f'Maxvalue Detektor2 = {maxvalueDet2}')
     print(u'Verhältnis:\t\t', maxvalueDet2 / maxvalueDet1)
-    print(u'Frequenz (FFT):\t\t', "%.2f" % dominantfreqDet2, ' Hz')
+    print(u'Frequenz1 (FFT):\t\t', "%.2f" % dominantfreqDet1, ' Hz')
+    print(u'Frequenz2 (FFT):\t\t', "%.2f" % dominantfreqDet2, ' Hz')
 
     plt.figure(figsize=(8.2, 6.2))
-    plt.xlim(0, 15)
-    #plt.plot(freqs_slice, amplitudeDet1_slice, color='blue')
-    #plt.plot(dominantfreqDet1, maxvalueDet1, color='blue', marker='*')
+    #plt.xlim(0, 15)
+    plt.plot(freqs_slice, amplitudeDet1_slice, color='blue')
+    plt.plot(dominantfreqDet1, maxvalueDet1, color='blue', marker='*')
     plt.plot(freqs_slice, amplitudeDet2_slice, color='green')
     plt.plot(dominantfreqDet2, maxvalueDet2, color='green', marker='*')
 
@@ -176,19 +178,14 @@ def auswerte(dicke, NummerMessung, Kommentar):
     plt.show()
 
     ################# EXCEL EINLESEN ###########################
-    import pandas as pd
 
-    # df1 = pd..append([['a', 'b'], ['c', 'd']], index=['1', '5'], columns=['1', '5'])
-
-    d = {'Messnummer': [NummerMessung], 'maxValue': [maxvalueDet2], 'dicke': [dicke], 'Frequenz': [dominantfreqDet2], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung], 'maxValue': [maxvalueDet2], 'dicke': [dicke], 'Frequenz': [dominantfreqDet2], 'Kommentar': [Kommentar], 'Verhältnis': [maxvalueDet2 / maxvalueDet1]}
     df1 = pd.DataFrame(data=d)
 
-    #df1 = pd.DataFrame([["XYZ"]], columns=[NummerMessung, maxvalueDet2, dicke])
-    file_name = ('160223_Kompaktsensor_v2_Bechermessung2.xlsx')
+    #file_name = (file_name)
 
-    with pd.ExcelWriter('160223_Kompaktsensor_v2_Bechermessung2.xlsx', engine="openpyxl", mode='a', if_sheet_exists='overlay') as writer:
+    with pd.ExcelWriter(file_name, engine="openpyxl", mode='a', if_sheet_exists='overlay') as writer:
         df1.to_excel(writer, header=False, startrow=NummerMessung, startcol=0, merge_cells=True)
 
-    # df1.to_excel(file_name, header=False, startrow=reihe-1, startcol =0, merge_cells=True)
     print('excel export successful')
 
