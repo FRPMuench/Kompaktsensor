@@ -6,12 +6,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     import pandas as pd
 
 
-    ser = serial.Serial('COM3', 9600, timeout=0.1)#, timeout=0.01)#None)#0.01)
-    #plt.ion()
-
-    #dicke= 10 # Schichtdicke des zu messenden Bechers in nm
-    #NummerMessung = 1 #Nummerierung der Messung
-
+    ser = serial.Serial('COM3', 115200, timeout=0.1)#, timeout=0.01)#None)#0.01)
 
     ##Einstellungen
     acquisitiontime =2 #.5 # seconds
@@ -28,35 +23,24 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
         plt.grid(True)  # Turn the grid on
         plt.ylabel('Spannung in Volt')  # Set ylabels
         plt.xlabel('Zeit in Sekunden')  # Set ylabels
-        plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
-        plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
+        #plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
+        #plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
         #plt.plot(ticker, (np.array(messung4)-np.array(messung3)))
         #plt.plot(ticker, (np.array(messung2) - np.array(messung1)))
         plt.plot(ticker, messung3, 'red', label='Detektor2, Messung1')  # plot messung2
         plt.plot(ticker, messung4, 'purple', label='Detektor2, Messung2')  # plot messung2
-        plt.legend()
+        #plt.legend()
         #plt.savefig('Spannung_Zeit_Diagramm_Hintergrund_Luft')
-
         plt.show()
 
     ##Einlesen
-
-    #while (ser.inWaiting() > 0):  # empty buffer
-     #   garbage = ser.read_until(b'stopped') + ser.read()
-      #  print(garbage)
 
     T0 = time.perf_counter()  # Zeit bis Messund startet (Kommunikationsdauer)
 
     ser.write(('1').encode('ascii'))
 
-    # run = []
-
-    #while (ser.inWaiting() < 10): #hier kommt 1000 hin -> was sagt die 1000 aus??
-       # time.sleep(.01)#0.01
 
     print('Kommunigationsdauer:\t', "%.2f" % (time.perf_counter() - T0), ' s')
-
-    #if (ser.inWaiting() >= 10): #hier kommt 1000 hin
 
     t_start = time.perf_counter()
     print('Startzeit')
@@ -69,7 +53,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     while T < t_end:
         arduinoString = ser.readline()  # read the line of text from the serial port
         dataArray = arduinoString.split(b' ')  # Split it into an array called dataArray
-        # ser_bytes = ser.readline().decode("utf-8", errors='replace').split()
+
 
         m1 = float(dataArray[0])
         m2 = float(dataArray[1])
@@ -83,26 +67,34 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
         messung4.append(m4)
         readings = T - t_start
         ticker.append(readings) #ticker entspricht run in Benedikts file
-        #ticker.append(time.perf_counter())#bis hier hin verrückt
 
+    ##Anpassung der Kurve auf vollständigen Durchlauf
+    first_value=messung3[0]
+    last_index = None
+    for i in range(len(messung3) - 1, -1, -1):
+        if messung3[i] == first_value:
+            last_index = i
+            break
 
+    #last_index = min(range(len(messung3)), key=lambda i: abs(messung3[i] - first_value))
+
+    # Kürze den Array an der Stelle des letzten Index
+    if last_index is not None:
+        messung1 = messung1[:last_index + 1]
+        messung2 = messung2[:last_index + 1]
+        messung3 = messung3[:last_index + 1]
+        messung4 = messung4[:last_index + 1]
+        ticker=ticker[:last_index + 1]
+
+    print(f'first Value {first_value}')
+    print(f'index {last_index}')
+    print(messung3)
     makeFig()
     # plt.pause(.00001)  # Pause Briefly. Important to keep drawnow from crashing
 
     acquisitiontime_measured = T - t_start #Erfassungszeit
     print('Messdauer:\t\t', "%.2f" % acquisitiontime_measured, ' s')
     ser.write(('2').encode('ascii'))
-
-
-        #while (ser.inWaiting() > 0):  # empty buffer
-         #   garbage = ser.read_until(b'stopped') + ser.read()
-            #print(garbage)
-          #  print('next')
-
-        #while (ser.inWaiting() > 0):  # empty buffer
-         #   print('gefangen in while Schleife')
-          #  garbage = ser.read_until(b'stopped') + ser.read()
-
 
     #######
     # FFT #
@@ -119,7 +111,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #print(f'sample = {samples}')
     samples = ticker.shape[0]
     print(f'sample = {samples}')
-    samplerate = acquisitiontime_measured / samples
+    #samplerate = acquisitiontime_measured / samples
     #print(f'samplerate= {samplerate}')
     samplerate = acquisitiontime_measured / samples  # Dauer einer Messung in Sekunden
 
@@ -129,7 +121,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #freqs_slice = freqs[idx]
     #freqs_slice = freqs[idx]
     #print(freqs_slice)
-    freqs_slice = freqs[idx][int((samples + 3) / 2):]  # nur positive Frequenzen verwenden
+    freqs_slice = freqs[idx][int((samples) // 2):]  # nur positive Frequenzen verwenden
 
     ##Amplituden
 
@@ -139,7 +131,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #Amplitude Detektor 1
 
     amplitudeDet1=(1/samples)* np.abs(np.fft.fft(messungDet1)) #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
-    amplitudeDet1_slice = amplitudeDet1[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    amplitudeDet1_slice = amplitudeDet1[idx][int((samples) // 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
 
     maxvalueDet1 = np.amax(amplitudeDet1_slice)
     maxindexDet1 = np.argmax(amplitudeDet1_slice)
@@ -148,7 +140,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #Amplitude Detektor 2
 
     amplitudeDet2 = (1 / samples) * np.abs(np.fft.fft(messungDet2))
-    amplitudeDet2_slice = amplitudeDet2[idx][int((samples+3)/2):]
+    amplitudeDet2_slice = amplitudeDet2[idx][int((samples)//2):]
     #amplitudeDet2_slice = amplitudeDet2[idx][int((samples + 3) / 2):]
 
 
