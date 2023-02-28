@@ -5,13 +5,14 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     import matplotlib.pyplot as plt
     import pandas as pd
     from scipy.signal import windows
+    import scipy.signal as signal
     #from numpy.fft import fft, ifft
 
 
     ser = serial.Serial('COM3', 115200, timeout=1)#, timeout=0.01)#None)#0.01)
 
     ##Einstellungen
-    acquisitiontime = 1 #.5 # seconds
+    acquisitiontime = 3 #.5 # seconds
     #messung1 = [] #Detektor 1, Messung1 Transparent
     #messung2 = [] #Detektor 1, Messung2,Transparent
     messung3 = [] #Detektor 2, Messung 1, Filter
@@ -96,22 +97,33 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     ##Frequenzen
     freqs = np.fft.fftfreq(samples, samplerate) #(??, was passiert hier?), was ist der Unterschied zu timearray?? in sekunden
     idx = np.argsort(freqs)  # Frequenzen sortieren
-    freqs_slice = freqs[idx][int((samples+3)/ 2):]  # nur positive Frequenzen verwenden
+    freqs_slice = freqs[idx][int((samples+3)/ 2):]  # nur positive Frequenzen verwenden -> (samples+3)/ 2)
 
     ##Amplituden & Apply Flat Top window to the signal
 
-    window3 = windows.flattop(len(messung3))
-    window4 = windows.flattop(len(messung4))
+    messung3 = np.array(messung3)
+    messung4 =np.array(messung4)
+
+    window1 = windows.flattop(len(ticker))
+    #window2 = signal.blackmanharris(samples)
+    window2= signal.windows.nuttall(len(ticker))
 
     #messungDet1 = (np.array(messung2) - np.array(messung1)) #Detektor 1, transparenter Filter, background
     #messungDet2 = (np.array(messung4) - np.array(messung3))
-    messungDet1 = (np.array(messung3))*window3
-    messungDet2 = (np.array(messung4))*window4
+    #messungDet1 = messung3*window1*window2
+    #messungDet2 = messung4*window1*window2
+
+    messungDet1 = messung3*window1*window2
+    messungDet2 = messung4*window1*window2
     
     #Amplitude Detektor 2, Channel 3
+    n=8
 
     amplitudeDet1=(1/samples)* np.abs(np.fft.fft(messungDet1))#*2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
     amplitudeDet1_slice = amplitudeDet1[idx][int((samples +3)/ 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    #print(amplitudeDet1_slice)
+    amplitudeDet1_slice=amplitudeDet1_slice[n:]
+    freqs_slice=freqs_slice[n:]
 
     maxvalueDet1 = np.amax(amplitudeDet1_slice)
     maxindexDet1 = np.argmax(amplitudeDet1_slice)
@@ -121,20 +133,24 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     amplitudeDet2 = (1 / samples) * np.abs(np.fft.fft(messungDet2))*2
     amplitudeDet2_slice = amplitudeDet2[idx][int((samples +3)/2):]
+    amplitudeDet2_slice=amplitudeDet2_slice[n:]
 
     maxvalueDet2 = np.amax(amplitudeDet2_slice)
     maxindexDet2 = np.argmax(amplitudeDet2_slice)
     dominantfreqDet2 = freqs_slice[maxindexDet2]
 
-    print(f'Maxvalue Detektor2, messung3 = {maxvalueDet1}')
-    print(f'Maxvalue Detektor2, messung4 = {maxvalueDet2}')
-    print(f'Maxvalue Detektpr 1 und 2= {maxvalueDet1 + maxvalueDet2}')
+    #plt.plot(freqs,amplitudeDet1)
+    #plt.show()
+
+    print(f'Maxvalue Detektor2, channel 1 = {maxvalueDet1}')
+    print(f'Maxvalue Detektor2, channel 2 = {maxvalueDet2}')
+    print(f'Maxvalue Detektor2, Channel 1 und 2= {maxvalueDet1 + maxvalueDet2}')
     print(u'Verhältnis:\t\t', maxvalueDet2 / maxvalueDet1)
     print(u'Frequenz1 (FFT):\t\t', "%.2f" % dominantfreqDet1, ' Hz')
     print(u'Frequenz2 (FFT):\t\t', "%.2f" % dominantfreqDet2, ' Hz')
 
     plt.figure(figsize=(8.2, 6.2))
-    #plt.xlim(0, 15)
+    plt.xlim(0, 25)
     plt.plot(freqs_slice, amplitudeDet1_slice, color='blue')
     plt.plot(dominantfreqDet1, maxvalueDet1, color='blue', marker='*')
     plt.plot(freqs_slice, amplitudeDet2_slice, color='green')
@@ -151,7 +167,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     ################# EXCEL EINLESEN ###########################
 
 
-    d = {'Messnummer': [NummerMessung], 'maxValueChan11': [maxvalueDet1], 'maxValueChan2': [maxvalueDet2], 'maxValueChan1u2': [maxvalueDet2], 'Frequenz1': [dominantfreqDet1], 'Frequenz': [dominantfreqDet2], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung], 'maxValueChan11': [maxvalueDet1], 'maxValueChan2': [maxvalueDet2], 'maxValueChan1u2': [maxvalueDet1+maxvalueDet2], 'Frequenz': [dominantfreqDet1], 'Kommentar': [Kommentar]}
     #d={'Messung3': [messung3], 'Messung4': [messung4], 'Zeit': ticker, 'MaxValue,Det2, channel3': [maxvalueDet1], 'Maxvalue, Det2, channel4':[maxvalueDet2] }
     df1 = pd.DataFrame(data=d)
 
@@ -168,4 +184,3 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #print(messung4)
     #print('ticker')
     #print(ticker)
-
