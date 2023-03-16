@@ -13,10 +13,10 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     ##Einstellungen
     acquisitiontime = 3 #seconds
-    messung1 = [] #Detektor 1, Messung1 Transparent
-    messung2 = [] #Detektor 1, Messung2,Transparent
-    messung3 = [] #Detektor 2, Messung 1, Filter
-    messung4 = [] #Detektor 2, Messung 2, Filter
+    messung1 = [] #chan 1, Arduino A1
+    messung2 = [] # chan 2, Arduino A2
+    messung3 = [] # chan 3, Arduino A3
+    messung4 = [] # chan 4, Arduino A4
     ticker = []
 
     def makeFig():  # Create a function that makes our desired plot
@@ -28,14 +28,11 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
         plt.grid(True)  # Turn the grid on
         plt.ylabel('Spannung in Volt')  # Set ylabels
         plt.xlabel('Zeit in Sekunden')  # Set ylabels
-        plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
-        plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
-        #plt.plot(ticker, (np.array(messung2) - np.array(messung1)))
-        plt.plot(ticker, messung3, 'red', label='Detektor2, channel 1')  # plot messung2
-        plt.plot(ticker, messung4, 'purple', label='Detektor2, channel 2')  # plot messung2
-        # plt.plot(ticker, (np.array(messung4)-np.array(messung3)))
+        plt.plot(ticker, messung1, 'blue', label='Chan1, 3.95 mü/ 90 nm Ref')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
+        plt.plot(ticker, messung2, 'green', label='Chan2, 7.30 mü/ 200 nm SO2')  # plot messung2
+        plt.plot(ticker, messung3, 'red', label='Chan3, 9.44 mü/ 460 nm')  # plot messung2
+        plt.plot(ticker, messung4, 'purple', label='Chan4, 12.28 mü/ 1000 nm (for AlOx)')  # plot messung2
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        #plt.savefig('Spannung_Zeit_Diagramm_Hintergrund_Luft')
         plt.show()
 
     ##Einlesen
@@ -100,19 +97,10 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     window1 = windows.flattop(len(ticker))
     window2= signal.windows.nuttall(len(ticker))
 
-    #messungDet1 = (np.array(messung2) - np.array(messung1)) #Detektor 1, transparenter Filter, background
-    #messungDet2 = (np.array(messung4) - np.array(messung3))
-    #messungDet1 = messung3*window1*window2
-    #messungDet2 = messung4*window1*window2
-
-
-    #messungDet1_chan1 = messung1*window1
-    #messungDet1_chan2 = messung2*window1
-
-    messungDet1_chan1 = messung1*window1*window2
-    messungDet1_chan2 = messung2*window1*window2
-    messungDet2_chan1 = messung3*window1*window2
-    messungDet2_chan2 = messung4*window1*window2
+    messung_chan1 = messung1*window1*window2
+    messung_chan2 = messung2*window1*window2
+    messung_chan3 = messung3*window1*window2
+    messung_chan4 = messung4*window1*window2
 
     makeFig()
 
@@ -120,86 +108,82 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     freqs_slice = freqs_slice[n:]
 
     ######
-    # Amplitude Detektor 1, Channel 1 (messung1), mit flattop window
+    # Amplitude Channel 1 (messung1), mit flattop window und nuttall
     ######
 
-    amplitudeDet1_chan1 = (1 / samples) * np.abs(np.fft.fft(messungDet1_chan1))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
-    amplitudeDet1_chan1_slice = amplitudeDet1_chan1[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
-    amplitudeDet1_chan1_slice = amplitudeDet1_chan1_slice[n:]
+    amplitude_chan1 = (1 / samples) * np.abs(np.fft.fft(messung_chan1))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
+    amplitude_chan1_slice = amplitude_chan1[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    amplitude_chan1_slice = amplitude_chan1_slice[n:]
 
-    maxvalueDet1_chan1 = np.amax(amplitudeDet1_chan1_slice)
-    maxindexDet1_chan1 = np.argmax(amplitudeDet1_chan1_slice)
-    dominantfreqDet1_chan1 = freqs_slice[maxindexDet1_chan1]
-
-    ######
-    # Amplitude Detektor 1, Channel 2 (messung2), mit flattop window
-    ######
-
-    amplitudeDet1_chan2 = (1 / samples) * np.abs(np.fft.fft(messungDet1_chan2))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
-    amplitudeDet1_chan2_slice = amplitudeDet1_chan2[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
-    amplitudeDet1_chan2_slice = amplitudeDet1_chan2_slice[n:]
-
-    maxvalueDet1_chan2 = np.amax(amplitudeDet1_chan2_slice)
-    maxindexDet1_chan2 = np.argmax(amplitudeDet1_chan2_slice)
-    dominantfreqDet1_chan2 = freqs_slice[maxindexDet1_chan2]
+    maxvalue_chan1 = np.amax(amplitude_chan1_slice)
+    maxindex_chan1 = np.argmax(amplitude_chan1_slice)
+    dominantfreq_chan1 = freqs_slice[maxindex_chan1]
 
     ######
-    #Amplitude Detektor 2, Channel 1 (messung3), mit flattop window
+    # Amplitude Channel 2 (messung2), mit flattop window und nuttall
     ######
 
-    amplitudeDet2_chan1=(1/samples)* np.abs(np.fft.fft(messungDet2_chan1))#*2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
-    amplitudeDet2_chan1_slice = amplitudeDet2_chan1[idx][int((samples +3)/ 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
-    amplitudeDet2_chan1_slice=amplitudeDet2_chan1_slice[n:]
+    amplitude_chan2 = (1 / samples) * np.abs(np.fft.fft(messung_chan2))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
+    amplitude_chan2_slice = amplitude_chan2[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    amplitude_chan2_slice = amplitude_chan2_slice[n:]
 
-
-    maxvalueDet2_chan1 = np.amax(amplitudeDet2_chan1_slice)
-    maxindexDet2_chan1 = np.argmax(amplitudeDet2_chan1_slice)
-    dominantfreqDet2_chan1 = freqs_slice[maxindexDet2_chan1]
+    maxvalue_chan2 = np.amax(amplitude_chan2_slice)
+    maxindex_chan2 = np.argmax(amplitude_chan2_slice)
+    dominantfreq_chan2 = freqs_slice[maxindex_chan2]
 
     ######
-    # Amplitude Detektor 2, Channel 2 (messung4), mit flattop window
+    #Amplitude Channel 3 (messung3), mit flattop window und nuttall
     ######
 
-    amplitudeDet2_chan2 = (1 / samples) * np.abs(np.fft.fft(messungDet2_chan2))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
-    amplitudeDet2_chan2_slice = amplitudeDet2_chan2[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
-    amplitudeDet2_chan2_slice = amplitudeDet2_chan2_slice[n:]
+    amplitude_chan3=(1/samples)* np.abs(np.fft.fft(messung_chan3))#*2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
+    amplitude_chan3_slice = amplitude_chan3[idx][int((samples +3)/ 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    amplitude_chan3_slice=amplitude_chan3_slice[n:]
 
-    maxvalueDet2_chan2 = np.amax(amplitudeDet2_chan2_slice)
-    maxindexDet2_chan2 = np.argmax(amplitudeDet2_chan2_slice)
-    dominantfreqDet2_chan2 = freqs_slice[maxindexDet2_chan2]
+
+    maxvalue_chan3 = np.amax(amplitude_chan3_slice)
+    maxindex_chan3 = np.argmax(amplitude_chan3_slice)
+    dominantfreq_chan3 = freqs_slice[maxindex_chan3]
+
+    ######
+    # Amplitude Channel 4 (messung4), mit flattop window und nuttall
+    ######
+
+    amplitude_chan4 = (1 / samples) * np.abs(np.fft.fft(messung_chan4))  # *2 #Fast Fourier Transformation von Messung 3, /samplerate mitnehmen #was für eine Einheit kommt bei der fft raus. Spannung pro Zeitintervall
+    amplitude_chan4_slice = amplitude_chan4[idx][int((samples + 3) / 2):]  # +11 (ungerade!), um Maximum bei f=0 auszuschließen
+    amplitude_chan4_slice = amplitude_chan4_slice[n:]
+
+    maxvalue_chan4 = np.amax(amplitude_chan4_slice)
+    maxindex_chan4 = np.argmax(amplitude_chan4_slice)
+    dominantfreq_chan4 = freqs_slice[maxindex_chan4]
 
     ##Ausgabewerte###
 
-    print(f'Maxvalue Detektor1, channel 1, (messung1) mit flattop window = {maxvalueDet1_chan1}')
-    print(f'Maxvalue Detektor1, channel 2, (messung2) mit flattop window = {maxvalueDet1_chan2}')
-    print(f'Maxvalue Detektor1, Channel 1 und 2= {maxvalueDet1_chan1 + maxvalueDet1_chan2}')
+    print(f'Maxvalue channel 1, (messung1) mit flattop und nuttall window = {maxvalue_chan1}')
+    print(f'Maxvalue channel 2, (messung2) mit flattop und nuttall window = {maxvalue_chan2}')
+    print(f'Maxvalue channel 3, (messung3) mit flattop und nutall window = {maxvalue_chan1}')
+    print(f'Maxvalue channel 4, (messung4) mit flattop und nutall window = {maxvalue_chan2}')
 
-    print(f'Maxvalue Detektor2, channel 1, (messung3) mit flattop window = {maxvalueDet2_chan1}')
-    print(f'Maxvalue Detektor2, channel 2, (messung4) mit flattop window = {maxvalueDet2_chan2}')
-    print(f'Maxvalue Detektor2, Channel 1 und 2= {maxvalueDet2_chan1 + maxvalueDet2_chan2}')
-    print(f'Verhältnis max Value Detektor 2, chan2  durch Detektor 1, chan2 = {(maxvalueDet2_chan2) / (maxvalueDet1_chan2)}')
-
-    print(u'Frequenz Detektor1, chan1 (FFT):\t\t', "%.2f" % dominantfreqDet1_chan1, ' Hz')
-    print(u'Frequenz Detektor2, chan2 (FFT):\t\t', "%.2f" % dominantfreqDet1_chan2, ' Hz')
-    print(u'Frequenz Detektor2, chan1 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan1, ' Hz')
-    print(u'Frequenz Detektor2, chan2 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan2, ' Hz')
+    print(u'Frequenz chan1 (FFT):\t\t', "%.2f" % dominantfreq_chan1, ' Hz')
+    print(u'Frequenz chan2 (FFT):\t\t', "%.2f" % dominantfreq_chan2, ' Hz')
+    print(u'Frequenz chan3 (FFT):\t\t', "%.2f" % dominantfreq_chan3, ' Hz')
+    print(u'Frequenz chan4 (FFT):\t\t', "%.2f" % dominantfreq_chan4, ' Hz')
 
     ##plot##
 
     plt.figure(figsize=(8.2, 6.2))
     plt.xlim(0, 25)
 
-    plt.plot(freqs_slice, amplitudeDet1_chan1_slice, color='blue', label='Detektor 1, channel 1')
-    plt.plot(dominantfreqDet1_chan1, maxvalueDet1_chan1, color='blue', marker='*')
-    plt.plot(freqs_slice, amplitudeDet1_chan2_slice, color='green', label='Detektor 1, channel 2')
-    plt.plot(dominantfreqDet1_chan2, maxvalueDet1_chan2, color='green', marker='*')
+    plt.plot(freqs_slice, amplitude_chan1_slice, color='blue', label='FFT Chan1, 3.95 mü/ 90 nm Ref')
+    plt.plot(dominantfreq_chan1, maxvalue_chan1, color='blue', marker='*')
+    plt.plot(freqs_slice, amplitude_chan2_slice, color='green', label='FFT Chan2, 7.30 mü/ 200 nm SO2')
+    plt.plot(dominantfreq_chan2, maxvalue_chan2, color='green', marker='*')
 
-    plt.plot(freqs_slice, amplitudeDet2_chan1_slice, color='red', label='Detektor 2, channel 1')
-    plt.plot(dominantfreqDet2_chan1, maxvalueDet2_chan1, color='red', marker='*')
-    plt.plot(freqs_slice, amplitudeDet2_chan2_slice, color='purple', label='Detektor 2, channel 2')
-    plt.plot(dominantfreqDet2_chan2, maxvalueDet2_chan2, color='purple', marker='*')
+    plt.plot(freqs_slice, amplitude_chan3_slice, color='red', label='FFT Chan3, 9.44 mü/ 460 nm')
+    plt.plot(dominantfreq_chan3, maxvalue_chan3, color='red', marker='*')
+    plt.plot(freqs_slice, amplitude_chan4_slice, color='purple', label='FFT Chan4, 12.28 mü/ 1000 nm (AlOx)')
+    plt.plot(dominantfreq_chan4, maxvalue_chan4, color='purple', marker='*')
 
-    plt.title(f' Messung mit KompaktsensorV1, {dicke} nm AlOx Beschichtung')
+    plt.title(f' Messung mit 4 Channel Sensor, {dicke} nm AlOx Beschichtung')
     plt.xlabel(u'Frequenz (Hz)')
     plt.ylabel(u'Amplitude');
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -208,7 +192,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     ################# EXCEL EINLESEN ###########################
 
-    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValueDet2_chan1': [maxvalueDet2_chan1], 'maxValueDet2_chan2': [maxvalueDet2_chan2], 'maxValueChan1u2': [maxvalueDet2_chan1+maxvalueDet2_chan2], 'Frequenz': [dominantfreqDet2_chan1], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValue_chan1': [maxvalue_chan1], 'maxValue_chan2': [maxvalue_chan2], 'maxValue_chan3': [maxvalue_chan3], 'maxValue_chan4': [maxvalue_chan4] 'Frequenz': [dominantfreq_chan4], 'Kommentar': [Kommentar]}
 
     df1 = pd.DataFrame(data=d)
 
