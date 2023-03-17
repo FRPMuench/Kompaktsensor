@@ -21,7 +21,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     def makeFig():  # Create a function that makes our desired plot
         # plt.ylim(80, 90)  # Set y min and max values
-        plt.xlim(0,0.6)
+        #plt.xlim(0,0.6)
         #plt.ylim(2.35, 2.45)
         #plt.figure(figsize=(8, 6))  # 8 Zoll breit und 6 Zoll hoch
         plt.title('My Streaming Sensor Data')  # Plot the title
@@ -160,8 +160,9 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     print(f'Maxvalue channel 1, (messung1) mit flattop und nuttall window = {maxvalue_chan1}')
     print(f'Maxvalue channel 2, (messung2) mit flattop und nuttall window = {maxvalue_chan2}')
-    print(f'Maxvalue channel 3, (messung3) mit flattop und nutall window = {maxvalue_chan1}')
-    print(f'Maxvalue channel 4, (messung4) mit flattop und nutall window = {maxvalue_chan2}')
+    print(f'Maxvalue channel 3, (messung3) mit flattop und nutall window = {maxvalue_chan3}')
+    print(f'Maxvalue channel 4, (messung4) mit flattop und nutall window = {maxvalue_chan4}')
+    print(f'Maxvalue channel 4 durch maxValue chan1 (Ref) = {maxvalue_chan4/maxvalue_chan1}')
 
     print(u'Frequenz chan1 (FFT):\t\t', "%.2f" % dominantfreq_chan1, ' Hz')
     print(u'Frequenz chan2 (FFT):\t\t', "%.2f" % dominantfreq_chan2, ' Hz')
@@ -192,7 +193,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     ################# EXCEL EINLESEN ###########################
 
-    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValue_chan1': [maxvalue_chan1], 'maxValue_chan2': [maxvalue_chan2], 'maxValue_chan3': [maxvalue_chan3], 'maxValue_chan4': [maxvalue_chan4] 'Frequenz': [dominantfreq_chan4], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValue_chan1': [maxvalue_chan1], 'maxValue_chan2': [maxvalue_chan2], 'maxValue_chan3': [maxvalue_chan3], 'maxValue_chan4': [maxvalue_chan4], 'Frequenz': [dominantfreq_chan4], 'Kommentar': [Kommentar]}
 
     df1 = pd.DataFrame(data=d)
 

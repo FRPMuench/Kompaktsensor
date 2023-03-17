@@ -12,7 +12,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     ser = serial.Serial('COM3', 115200, timeout=1)#, timeout=0.01)#None)#0.01)
 
     ##Einstellungen
-    acquisitiontime = 3 #seconds
+    acquisitiontime = 4 #seconds
     messung1 = [] #Detektor 1, Messung1 Transparent
     messung2 = [] #Detektor 1, Messung2,Transparent
     messung3 = [] #Detektor 2, Messung 1, Filter
@@ -99,6 +99,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     window1 = windows.flattop(len(ticker))
     window2= signal.windows.nuttall(len(ticker))
+    #window2 = 1
 
     #messungDet1 = (np.array(messung2) - np.array(messung1)) #Detektor 1, transparenter Filter, background
     #messungDet2 = (np.array(messung4) - np.array(messung3))
@@ -208,7 +209,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     ################# EXCEL EINLESEN ###########################
 
-    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValueDet2_chan1': [maxvalueDet2_chan1], 'maxValueDet2_chan2': [maxvalueDet2_chan2], 'maxValueChan1u2': [maxvalueDet2_chan1+maxvalueDet2_chan2], 'Frequenz': [dominantfreqDet2_chan1], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValueDet1_chan1': [maxvalueDet1_chan1], 'maxValueDet1_chan2': [maxvalueDet1_chan2], 'maxValueDet2_chan1': [maxvalueDet2_chan1], 'maxValueDet2_chan2': [maxvalueDet2_chan2], 'Verhaeltnis2zu1': [maxvalueDet2_chan1/maxvalueDet1_chan1], 'Frequenz': [dominantfreqDet2_chan1], 'Kommentar': [Kommentar]}
 
     df1 = pd.DataFrame(data=d)
 
