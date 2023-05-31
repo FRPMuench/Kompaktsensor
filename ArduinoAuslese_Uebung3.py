@@ -8,11 +8,13 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     import scipy.signal as signal
     from numpy.fft import fft, ifft
 
-
-    ser = serial.Serial('COM3', 115200, timeout=1)#, timeout=0.01)#None)#0.01)
+    # Configure the serial connection
+    #ser = serial.Serial('COM3', 9600)  # Replace 'COM3' with the correct port name
+    #ser.flushInput()
+    ser = serial.Serial('COM3', 115200, timeout=1)#, timeout=0.01)#None)#0.01)#115200
 
     ##Einstellungen
-    acquisitiontime = 4 #seconds
+    acquisitiontime = 2 #seconds
     messung1 = [] #Detektor 1, Messung1 Transparent
     messung2 = [] #Detektor 1, Messung2,Transparent
     messung3 = [] #Detektor 2, Messung 1, Filter
@@ -20,8 +22,9 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     ticker = []
 
     def makeFig():  # Create a function that makes our desired plot
-        # plt.ylim(80, 90)  # Set y min and max values
-        plt.xlim(0,0.6)
+        #plt.ylim(2.5, 3)  # Set y min and max values
+        plt.xlim(0.7,1.3)
+        #plt.ylim(1.8, 2.2)
         #plt.ylim(2.35, 2.45)
         #plt.figure(figsize=(8, 6))  # 8 Zoll breit und 6 Zoll hoch
         plt.title('My Streaming Sensor Data')  # Plot the title
@@ -30,12 +33,17 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
         plt.xlabel('Zeit in Sekunden')  # Set ylabels
         plt.plot(ticker, messung1, 'blue', label='Detektor1, Messung1')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
         plt.plot(ticker, messung2, 'green', label='Detektor1, Messung2')  # plot messung2
+        plt.plot(ticker, messungDet1_chan1, label='Detektor1, Messung 1, flattop')
+        plt.plot(ticker, messungDet1_chan2, label='Detektor2, Messung2, flattop')
         #plt.plot(ticker, (np.array(messung2) - np.array(messung1)))
-        plt.plot(ticker, messung3, 'red', label='Detektor2, channel 1')  # plot messung2
-        plt.plot(ticker, messung4, 'purple', label='Detektor2, channel 2')  # plot messung2
+        #plt.plot(ticker, messung3, 'red', label='Detektor2, channel 1')  # plot messung2
+        #plt.plot(ticker, messung4, 'purple', label='Detektor2, channel 2')  # plot messung2
+        #plt.plot(ticker, messungDet2_chan1, label='Detektor2, Messung 1, flattop')
+        #plt.plot(ticker, messungDet2_chan2, label='Detektor2, Messung 2, flattop')
         # plt.plot(ticker, (np.array(messung4)-np.array(messung3)))
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         #plt.savefig('Spannung_Zeit_Diagramm_Hintergrund_Luft')
+
         plt.show()
 
     ##Einlesen
@@ -55,6 +63,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     while T < t_end:
         arduinoString = ser.readline()  # read the line of text from the serial port
         dataArray = arduinoString.split(b' ')  # Split it into an array called dataArray
+        #print(dataArray)
 
         m1 = float(dataArray[0])
         m2 = float(dataArray[1])
@@ -72,6 +81,11 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     acquisitiontime_measured = T - t_start #Erfassungszeit
     print('Messdauer:\t\t', "%.2f" % acquisitiontime_measured, ' s')
     ser.write(('2').encode('ascii'))
+
+    #test = np.full(len(ticker), 1.65)
+    #plt.figure()
+    #plt.scatter(ticker, test)
+
 
     #######
     # FFT #
@@ -97,8 +111,15 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     messung3 = np.array(messung3)
     messung4 = np.array(messung4)
 
+    multiplier = (3.3/1024)  # Der Wert, mit dem jedes Array-Element multipliziert werden soll#3.3V für nano und 5V für UNO
+
+    messung1 *= multiplier
+    messung2 *= multiplier
+    messung3 *= multiplier
+    messung4 *= multiplier
+
     window1 = windows.flattop(len(ticker))
-    window2= signal.windows.nuttall(len(ticker))
+    #window2= signal.windows.nuttall(len(ticker))
     #window2 = 1
 
     #messungDet1 = (np.array(messung2) - np.array(messung1)) #Detektor 1, transparenter Filter, background
@@ -110,14 +131,20 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     #messungDet1_chan1 = messung1*window1
     #messungDet1_chan2 = messung2*window1
 
-    messungDet1_chan1 = messung1*window1*window2
-    messungDet1_chan2 = messung2*window1*window2
-    messungDet2_chan1 = messung3*window1*window2
-    messungDet2_chan2 = messung4*window1*window2
+    messungDet1_chan1 = messung1*window1
+    messungDet1_chan2 = messung2*window1
+    messungDet2_chan1 = messung3*window1
+    messungDet2_chan2 = messung4*window1
+
+    maximum_flattop_11 = np.amax(messungDet1_chan1)
+    maximum_flattop_12 = np.amax(messungDet1_chan2)
+
+    print(maximum_flattop_11)
+    print(maximum_flattop_12)
 
     makeFig()
 
-    n = 8  # messarray wird abgeschnitten, damit maximum bei null rausfliegt
+    n = 4#8  # messarray wird abgeschnitten, damit maximum bei null rausfliegt
     freqs_slice = freqs_slice[n:]
 
     ######
@@ -173,17 +200,17 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     print(f'Maxvalue Detektor1, channel 1, (messung1) mit flattop window = {maxvalueDet1_chan1}')
     print(f'Maxvalue Detektor1, channel 2, (messung2) mit flattop window = {maxvalueDet1_chan2}')
-    print(f'Maxvalue Detektor1, Channel 1 und 2= {maxvalueDet1_chan1 + maxvalueDet1_chan2}')
+    print(f'Maxvalue Detektor1, Channel 1 / 2= {maxvalueDet1_chan1 / maxvalueDet1_chan2}')
 
-    print(f'Maxvalue Detektor2, channel 1, (messung3) mit flattop window = {maxvalueDet2_chan1}')
-    print(f'Maxvalue Detektor2, channel 2, (messung4) mit flattop window = {maxvalueDet2_chan2}')
-    print(f'Maxvalue Detektor2, Channel 1 und 2= {maxvalueDet2_chan1 + maxvalueDet2_chan2}')
-    print(f'Verhältnis max Value Detektor 2, chan2  durch Detektor 1, chan2 = {(maxvalueDet2_chan2) / (maxvalueDet1_chan2)}')
+    #print(f'Maxvalue Detektor2, channel 1, (messung3) mit flattop window = {maxvalueDet2_chan1}')
+    #print(f'Maxvalue Detektor2, channel 2, (messung4) mit flattop window = {maxvalueDet2_chan2}')
+    #print(f'Maxvalue Detektor2, Channel 1 und 2= {maxvalueDet2_chan1 + maxvalueDet2_chan2}')
+    #print(f'Verhältnis max Value chan 2, durch chan 1 = {((maxvalueDet1_chan2) / (maxvalueDet1_chan1))}')
 
     print(u'Frequenz Detektor1, chan1 (FFT):\t\t', "%.2f" % dominantfreqDet1_chan1, ' Hz')
     print(u'Frequenz Detektor2, chan2 (FFT):\t\t', "%.2f" % dominantfreqDet1_chan2, ' Hz')
-    print(u'Frequenz Detektor2, chan1 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan1, ' Hz')
-    print(u'Frequenz Detektor2, chan2 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan2, ' Hz')
+    #print(u'Frequenz Detektor2, chan1 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan1, ' Hz')
+    #print(u'Frequenz Detektor2, chan2 (FFT):\t\t', "%.2f" % dominantfreqDet2_chan2, ' Hz')
 
     ##plot##
 
@@ -195,10 +222,10 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     plt.plot(freqs_slice, amplitudeDet1_chan2_slice, color='green', label='Detektor 1, channel 2')
     plt.plot(dominantfreqDet1_chan2, maxvalueDet1_chan2, color='green', marker='*')
 
-    plt.plot(freqs_slice, amplitudeDet2_chan1_slice, color='red', label='Detektor 2, channel 1')
-    plt.plot(dominantfreqDet2_chan1, maxvalueDet2_chan1, color='red', marker='*')
-    plt.plot(freqs_slice, amplitudeDet2_chan2_slice, color='purple', label='Detektor 2, channel 2')
-    plt.plot(dominantfreqDet2_chan2, maxvalueDet2_chan2, color='purple', marker='*')
+    #plt.plot(freqs_slice, amplitudeDet2_chan1_slice, color='red', label='Detektor 2, channel 1')
+    #plt.plot(dominantfreqDet2_chan1, maxvalueDet2_chan1, color='red', marker='*')
+    #plt.plot(freqs_slice, amplitudeDet2_chan2_slice, color='purple', label='Detektor 2, channel 2')
+    #plt.plot(dominantfreqDet2_chan2, maxvalueDet2_chan2, color='purple', marker='*')
 
     plt.title(f' Messung mit KompaktsensorV1, {dicke} nm AlOx Beschichtung')
     plt.xlabel(u'Frequenz (Hz)')
@@ -209,7 +236,7 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
 
     ################# EXCEL EINLESEN ###########################
 
-    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValueDet1_chan1': [maxvalueDet1_chan1], 'maxValueDet1_chan2': [maxvalueDet1_chan2], 'maxValueDet2_chan1': [maxvalueDet2_chan1], 'maxValueDet2_chan2': [maxvalueDet2_chan2], 'Verhaeltnis2zu1': [maxvalueDet2_chan1/maxvalueDet1_chan1], 'Frequenz': [dominantfreqDet2_chan1], 'Kommentar': [Kommentar]}
+    d = {'Messnummer': [NummerMessung],'dicke':[dicke], 'maxValueDet1_chan1': [maxvalueDet1_chan1], 'maxValueDet1_chan2': [maxvalueDet1_chan2], 'Frequenz': [dominantfreqDet1_chan1], 'Kommentar': [Kommentar]}
 
     df1 = pd.DataFrame(data=d)
 

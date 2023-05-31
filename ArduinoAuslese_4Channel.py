@@ -12,11 +12,11 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     ser = serial.Serial('COM3', 115200, timeout=1)#, timeout=0.01)#None)#0.01)
 
     ##Einstellungen
-    acquisitiontime = 3 #seconds
-    messung1 = [] #chan 1, Arduino A1
-    messung2 = [] # chan 2, Arduino A2
-    messung3 = [] # chan 3, Arduino A3
-    messung4 = [] # chan 4, Arduino A4
+    acquisitiontime = 6 #seconds
+    messung1 = [] #chan 1, Arduino A0
+    messung2 = [] # chan 2, Arduino A1
+    messung3 = [] # chan 3, Arduino A2
+    messung4 = [] # chan 4, Arduino A3
     ticker = []
 
     def makeFig():  # Create a function that makes our desired plot
@@ -29,8 +29,8 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
         plt.ylabel('Spannung in Volt')  # Set ylabels
         plt.xlabel('Zeit in Sekunden')  # Set ylabels
         plt.plot(ticker, messung1, 'blue', label='Chan1, 3.95 mü/ 90 nm Ref')  # plot messung1 #Detektor 1 ist der mit dem transparenten Filter
-        plt.plot(ticker, messung2, 'green', label='Chan2, 7.30 mü/ 200 nm SO2')  # plot messung2
-        plt.plot(ticker, messung3, 'red', label='Chan3, 9.44 mü/ 460 nm')  # plot messung2
+        #plt.plot(ticker, messung2, 'green', label='Chan2, 7.30 mü/ 200 nm SO2')  # plot messung2
+        #plt.plot(ticker, messung3, 'red', label='Chan3, 9.44 mü/ 460 nm')  # plot messung2
         plt.plot(ticker, messung4, 'purple', label='Chan4, 12.28 mü/ 1000 nm (for AlOx)')  # plot messung2
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.show()
@@ -94,13 +94,20 @@ def auswerte(dicke, NummerMessung, Kommentar, file_name):
     messung3 = np.array(messung3)
     messung4 = np.array(messung4)
 
+    multiplier = (3.3 / 1024)  # Der Wert, mit dem jedes Array-Element multipliziert werden soll#3.3V für nano und 5V für UNO
+
+    messung1 *= multiplier
+    messung2 *= multiplier
+    messung3 *= multiplier
+    messung4 *= multiplier
+
     window1 = windows.flattop(len(ticker))
     window2= signal.windows.nuttall(len(ticker))
 
-    messung_chan1 = messung1*window1*window2
-    messung_chan2 = messung2*window1*window2
-    messung_chan3 = messung3*window1*window2
-    messung_chan4 = messung4*window1*window2
+    messung_chan1 = messung1*window1
+    messung_chan2 = messung2*window1
+    messung_chan3 = messung3*window1
+    messung_chan4 = messung4*window1
 
     makeFig()
 
