@@ -209,13 +209,10 @@ fig, ax = plt.subplots(figsize=(7, 4))
 ax.plot(d_values, R_absorption_values, color='black', label='R_absorption')
 #plt.plot(d_values, R_absorption_values, label='R_absorption')
 
-
 ax.tick_params(axis='both', direction='in', length=5, labelleft=True, labelright=False, labelsize=16)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 
-#ax.set_xlabel(u'wavenumber (cm$^{-1}$)', fontsize=16)
-#ax.set_ylabel(u'emission (mW cm$^{-1}$)', fontsize=16)
 ax.set_xlabel(u'Beschichtungsdicke (nm)', fontsize=16)
 ax.set_ylabel(u'Intensitätsreflexion', fontsize=16)
 #plt.legend(loc='lower center')
